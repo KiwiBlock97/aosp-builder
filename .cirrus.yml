@@ -1,1 +1,31 @@
-# empty
+env: # Environment variables to pass to all tasks
+    CIRRUS_CLONE_DEPTH: 1 # No need to clone with the whole history
+    CIRRUS_WORKING_DIR: "/tmp/ci" # Where to clone the aosp-builder repo
+
+    # For rclone with google drive or any cloud! After first commit pushing, login to https://cirrus-ci.com , click top left corner 3 dot menu, click repository(yourname/aosp-builder) > Repository Settings > Secured Variables > enter content of ~/.config/rclone/rclone.conf (from pc where you setup rclone) > ENCRYPT, copy that ENCRYPTED hash
+    # ENCRYPTED variables is unique for every repository, so you cant use my one, create you rclone config https://rclone.org/drive/#making-your-own-client-id
+    # CHAT_ID and BOT_TOKEN are used by telegram functions. I don't want you to control my bot xD
+    rclone_config: "ENCRYPTED[f6f9fca7ae9effaf26ce0a056f6b1040ec7a8ce001a8b5e48bf6e9bf185583f9f2bcdd062dd000c5a2afb5331c699ef4]"
+    CHAT_ID: "-1001776820416"
+    BOT_TOKEN: "ENCRYPTED[8a03d83ac21686eb0ce490878f381262616ca4b122dffbab183676419aa6af40385eaf43b1fa160ea9d1a9a0373fc472]"
+    
+    # Github variables needed so as to be able to clone private repos too without authenticating. Useful for building official roms which have private repos. The first 3 variables needs to be encrypted!! You can hide your email and username by encrypting them too if you want but that's not neccessary.
+    user_email: "ENCRYPTED[bbfc5177d9ec8d1a064f0872d97a49b3b73364968cefe714d1587cf9a47ef9e24bd545176f3db34cfa5d7e380873dc96]"
+    user_name: "ENCRYPTED[e01822ad1cd6e67267dfb154841cf879f18326db0afe6ab4530a7cbb6bb678d46f540f7d8d998cf05ffccec37eae217e]"
+    user_pass: ""
+
+task:
+    name: Voltage-E # Project name
+    timeout_in: 120m # Otherwise it will timeout at 60m automatically, 120m highest in free account
+    container:
+      image: apon77/aosp:cirrus # It has built-in setup environment + repo, aria2, rclone, pigz, username ci, and email ci@ci.ci [You can use your own docker image if you want, or you can use this one too!]
+      cpu: 8  # 8 or less cpu for dummy build, 8 cpu for the final build, 8cpu highest for free accounts. Don't try to use more than 8cpu as free user, you may get blocked by ci.
+      memory: 32G # So that we can have ram when needed, 32G highest. 4G per CPU you use.
+    permission_script: # Actual chmod script foreground
+      - chmod 777 * # chmod script to run
+    monitoring_background_script: # To monitor ccache and machine status every minute, runs in background
+      - ./monitor # Monitor script
+    Build_script: # Actual build script foreground
+      - ./build.sh # Build script to run
+    Upload_script: 
+      - ./upload.sh
